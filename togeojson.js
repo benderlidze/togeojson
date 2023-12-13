@@ -206,9 +206,38 @@ var toGeoJSON = (function () {
                     coordTimes: coordTimes
                 };
             }
+
+            function parentNodeRecursive(node, path = []) {
+                if (node.parentNode) {
+                    const nodeTag = node.tagName
+                    const nodeValue = nodeVal(get1(node, 'name'))
+                    path.push({ nodeTag, nodeValue })
+                    return parentNodeRecursive(node.parentNode, path)
+                } else {
+                    return path
+                }
+            }
+
+            //search for parent node value by node Name
+            function getParentNodeValue(node, searchNodeName) {
+                if (node.parentNode && searchNodeName !== node.tagName) {
+                    return getParentNodeValue(node.parentNode, searchNodeName)
+                } else {
+                    if (searchNodeName === node.tagName) {
+                        const nodeValue = nodeVal(get1(node, 'name'))
+                        return nodeValue
+                    }
+                    else
+                        return null
+                }
+            }
+
             function getPlacemark(root) {
+
                 var geomsAndTimes = getGeometry(root), i, properties = {},
                     name = nodeVal(get1(root, 'name')),
+                    path = parentNodeRecursive(root),
+                    nodeName = getParentNodeValue(root, "Document"),
                     address = nodeVal(get1(root, 'address')),
                     styleUrl = nodeVal(get1(root, 'styleUrl')),
                     description = nodeVal(get1(root, 'description')),
@@ -220,6 +249,8 @@ var toGeoJSON = (function () {
                     visibility = get1(root, 'visibility');
 
                 if (!geomsAndTimes.geoms.length) return [];
+                if (path) properties.path = path;
+                if (nodeName) properties.nodeName = nodeName;
                 if (name) properties.name = name;
                 if (address) properties.address = address;
                 if (styleUrl) {
